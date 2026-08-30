@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedro Gama 4030 — Crie sua Foto de Apoio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --azul: #1e3a8a;
+            --azul-escuro: #0f1f4a;
+            --verde: #16a34a;
+            --amarelo: #f59e0b;
+            --laranja: #ea580c;
+            --vermelho: #dc2626;
+            --branco: #ffffff;
+            --cinza: #f3f4f6;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(180deg, var(--azul-escuro) 0%, var(--azul) 100%);
+            min-height: 100vh;
+            color: var(--branco);
+            overflow-x: hidden;
+        }
+
+        /* Banner topo */
+        .banner-topo {
+            width: 100%;
+            max-height: 220px;
+            overflow: hidden;
+            position: relative;
+        }
+        .banner-topo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center top;
+        }
+        .banner-topo::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(to top, var(--azul), transparent);
+        }
+
+        /* Container principal */
+        .container {
+            max-width: 520px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Faixa decorativa */
+        .faixa-cores {
+            display: flex;
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .faixa-cores span { flex: 1; }
+        .faixa-cores span:nth-child(1) { background: var(--vermelho); }
+        .faixa-cores span:nth-child(2) { background: var(--amarelo); }
+        .faixa-cores span:nth-child(3) { background: var(--verde); }
+        .faixa-cores span:nth-child(4) { background: var(--azul); }
+
+        h1 {
+            text-align: center;
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        h1 span { color: var(--amarelo); }
+
+        .subtitulo {
+            text-align: center;
+            font-size: 0.95rem;
+            opacity: 0.9;
+            margin-bottom: 30px;
+            font-weight: 400;
+        }
+
+        /* Área de upload */
+        .upload-card {
+            background: rgba(255,255,255,0.08);
+            border: 2px dashed rgba(255,255,255,0.4);
+            border-radius: 20px;
+            padding: 35px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+        .upload-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(245,158,11,0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .upload-card:hover {
+            border-color: var(--amarelo);
+            background: rgba(255,255,255,0.12);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .upload-card:hover::before { opacity: 1; }
+        .upload-card .icone {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            display: block;
+        }
+        .upload-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+        .upload-card p {
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
+        input[type="file"] { display: none; }
+
+        /* Preview */
+        .preview-area {
+            display: none;
+            margin-top: 25px;
+            text-align: center;
+        }
+        .preview-area.active { display: block; }
+
+        .preview-wrapper {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            margin: 0 auto;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.5);
+            border: 4px solid rgba(255,255,255,0.2);
+            background: #fff;
+        }
+        .preview-wrapper img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        #previewFrame {
+            z-index: 2;
+            pointer-events: none;
+        }
+        #previewPhoto {
+            z-index: 1;
+            transition: transform 0.1s;
+        }
+
+        /* Controles */
+        .controls {
+            display: none;
+            margin-top: 25px;
+            animation: fadeIn 0.4s ease;
+        }
+        .controls.active { display: block; }
+
+        .slider-box {
+            background: rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 18px 20px;
+            margin-bottom: 20px;
+        }
+        .slider-box label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .slider-box label span { opacity: 0.7; }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.2);
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--amarelo);
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(245,158,11,0.5);
+            border: 3px solid var(--branco);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--amarelo);
+            cursor: pointer;
+            border: 3px solid var(--branco);
+            box-shadow: 0 2px 10px rgba(245,158,11,0.5);
+        }
+
+        .botoes {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--amarelo), var(--laranja));
+            color: var(--azul-escuro);
+            box-shadow: 0 6px 20px rgba(245,158,11,0.4);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(245,158,11,0.6);
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.15);
+            color: var(--branco);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.25);
+        }
+        .btn-share {
+            background: rgba(255,255,255,0.12);
+            color: var(--branco);
+            border: 1px dashed rgba(255,255,255,0.18);
+        }
+        .btn-share:hover { background: rgba(255,255,255,0.18); }
+
+        /* Próximos passos panel */
+        .next-steps {
+            display: none;
+            margin-top: 20px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 14px;
+            padding: 16px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+        }
+        .next-steps.active { display: block; }
+        .next-steps h4 { margin-bottom: 10px; font-size: 1rem; }
+        .steps {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .step {
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+        .step img { width: 48px; height: 48px; object-fit: contain; margin-bottom: 8px; }
+
+        .app-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .app-btn {
+            background: rgba(255,255,255,0.06);
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--branco);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .app-btn:active { transform: translateY(1px); }
+
+        /* Rodapé */
+        .rodape {
+            text-align: center;
+            margin-top: 40px;
+            padding-bottom: 30px;
+            opacity: 0.6;
+            font-size: 0.75rem;
+        }
+        .rodape strong {
+            color: var(--amarelo);
+            font-weight: 700;
+        }
+
+        /* Animações */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .pulse { animation: pulse 2s infinite; }
+
+        /* Loading */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15,31,74,0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .loading-overlay.active { display: flex; }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.2);
+            border-top-color: var(--amarelo);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 15px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Canvas hidden */
+        #canvasFinal { display: none; }
+
+        /* Responsivo */
+        @media (max-width: 480px) {
+            .banner-topo { max-height: 140px; }
+            h1 { font-size: 1.3rem; }
+            .preview-wrapper { width: 240px; height: 240px; }
+            .upload-card { padding: 25px 15px; }
+            .btn { padding: 12px 20px; font-size: 0.85rem; }
+            .steps { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Banner -->
+    <div class="banner-topo">
+        <img src="https://drive.google.com/uc?export=download&id=1CqgCeWtkAhqhjgpe189K4EYbaFgMGAnA" alt="Pedro Gama 4030 - É por Minas, é pra valer!">
+    </div>
+
+    <div class="container">
+        <!-- Faixa de cores -->
+        <div class="faixa-cores">
+            <span></span><span></span><span></span><span></span>
+        </div>
+
+        <h1>Crie sua Foto de <span>Apoio</span></h1>
+        <p class="subtitulo">Escolha sua foto, ajuste e baixe para usar no perfil!</p>
+
+        <!-- Upload -->
+        <div class="upload-card" id="dropZone" onclick="document.getElementById('fileInput').click()">
+            <span class="icone">📷</span>
+            <h3>Clique ou arraste sua foto</h3>
+            <p>JPG, PNG ou WEBP • Sem anúncios • Sem marca d'água</p>
+        </div>
+        <input type="file" id="fileInput" accept="image/*">
+
+        <!-- Preview -->
+        <div class="preview-area" id="previewArea">
+            <div class="preview-wrapper">
+                <img id="previewPhoto" alt="Sua foto">
+                <img id="previewFrame" src="https://drive.google.com/uc?export=download&id=1sQTdW0v3nrRa-JAOC7XVKvgvotoOBxuf" alt="Moldura Pedro Gama 4030">
+            </div>
+        </div>
+
+        <!-- Controles -->
+        <div class="controls" id="controlsArea">
+            <div class="slider-box">
+                <label>
+                    🔍 Ajustar tamanho
+                    <span id="zoomValue">100%</span>
+                </label>
+                <input type="range" id="zoomRange" min="50" max="200" value="100">
+            </div>
+            <div class="botoes">
+                <button class="btn btn-primary" id="downloadBtn" onclick="baixarFoto()">⬇️ Baixar Foto</button>
+                <button class="btn btn-share" id="shareBtn" onclick="compartilhar()" title="Compartilhar">📤 Compartilhar</button>
+                <button class="btn btn-secondary" onclick="refazer()">🔄 Trocar Foto</button>
+            </div>
+        </div>
+
+        <!-- Próximos passos -->
+        <div class="next-steps" id="nextSteps">
+            <h4>Próximos passos — Como usar sua nova foto</h4>
+            <div class="steps">
+                <div class="step">
+                    <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect rx='8' width='48' height='48' fill='%23f59e0b'/><text x='50%' y='55%' font-size='14' text-anchor='middle' fill='white'>1</text></svg>" alt="1">
+                    Abra o app (ex.: WhatsApp)
+                </div>
+                <div class="step">
+                    <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect rx='8' width='48' height='48' fill='%231e3a8a'/><text x='50%' y='55%' font-size='14' text-anchor='middle' fill='white'>2</text></svg>" alt="2">
+                    Vá em Perfil / Configurações de foto
+                </div>
+                <div class="step">
+                    <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect rx='8' width='48' height='48' fill='%2316a34a'/><text x='50%' y='55%' font-size='14' text-anchor='middle' fill='white'>3</text></svg>" alt="3">
+                    Selecione "Escolher foto" e escolha a imagem baixada
+                </div>
+                <div class="step">
+                    <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect rx='8' width='48' height='48' fill='%23ea580c'/><text x='50%' y='55%' font-size='14' text-anchor='middle' fill='white'>4</text></svg>" alt="4">
+                    Ajuste o enquadramento e confirme
+                </div>
+            </div>
+
+            <div class="app-buttons" style="margin-top:12px;">
+                <button class="app-btn" onclick="openAppScheme('whatsapp://send','https://web.whatsapp.com')">Abrir WhatsApp</button>
+                <button class="app-btn" onclick="openAppScheme('instagram://camera','https://www.instagram.com')">Abrir Instagram</button>
+                <button class="app-btn" onclick="openAppScheme('fb://','https://www.facebook.com')">Abrir Facebook</button>
+                <button class="app-btn" onclick="openAppScheme('snapchat://','https://www.snapchat.com')">Abrir Snapchat</button>
+            </div>
+        </div>
+
+        <div class="rodape">
+            <p><strong>PEDRO GAMA 4030</strong> • Deputado Federal • É por Minas, é pra valer!</p>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-overlay" id="loading">
+        <div class="spinner"></div>
+        <p>Gerando sua foto em alta qualidade...</p>
+    </div>
+
+    <canvas id="canvasFinal" width="1080" height="1080"></canvas>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const dropZone = document.getElementById('dropZone');
+        const previewArea = document.getElementById('previewArea');
+        const previewPhoto = document.getElementById('previewPhoto');
+        const previewFrame = document.getElementById('previewFrame');
+        const controlsArea = document.getElementById('controlsArea');
+        const zoomRange = document.getElementById('zoomRange');
+        const zoomValue = document.getElementById('zoomValue');
+        const loading = document.getElementById('loading');
+        const canvas = document.getElementById('canvasFinal');
+        const ctx = canvas.getContext('2d');
+        const nextSteps = document.getElementById('nextSteps');
+        const shareBtn = document.getElementById('shareBtn');
+
+        let fotoCarregada = false;
+        let molduraCarregada = false;
+        let zoomAtual = 100;
+        let lastDataUrl = null; // store last generated image dataURL
+
+        // Verificar se moldura carregou
+        previewFrame.onload = () => { molduraCarregada = true; };
+        previewFrame.onerror = () => {
+            alert('Erro ao carregar a moldura. Verifique se o arquivo "moldura.png" está na mesma pasta.');
+        };
+
+        // Upload
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            processarArquivo(file);
+        });
+
+        function processarArquivo(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Por favor, envie apenas imagens (JPG, PNG, WEBP).');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                previewPhoto.src = evt.target.result;
+                previewPhoto.onload = function() {
+                    fotoCarregada = true;
+                    previewArea.classList.add('active');
+                    controlsArea.classList.add('active');
+                    dropZone.style.display = 'none';
+                    aplicarZoom();
+                };
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Zoom
+        zoomRange.addEventListener('input', function() {
+            zoomAtual = parseInt(this.value);
+            zoomValue.textContent = zoomAtual + '%';
+            aplicarZoom();
+        });
+
+        function aplicarZoom() {
+            const escala = zoomAtual / 100;
+            previewPhoto.style.transform = 'scale(' + escala + ')';
+        }
+
+        // Download
+        function baixarFoto() {
+            if (!fotoCarregada) return;
+            loading.classList.add('active');
+            nextSteps.classList.remove('active');
+            // Pequeno delay para mostrar o loading
+            setTimeout(() => {
+                const tamanho = 1080;
+                canvas.width = tamanho;
+                canvas.height = tamanho;
+
+                // Fundo branco (caso a foto tenha transparência)
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, tamanho, tamanho);
+
+                // Calcular crop central da foto
+                const img = previewPhoto;
+                const escala = zoomAtual / 100;
+                const imgRatio = img.naturalWidth / img.naturalHeight;
+
+                let sw, sh, sx, sy;
+                if (imgRatio > 1) {
+                    sh = img.naturalHeight;
+                    sw = sh;
+                    sx = (img.naturalWidth - sw) / 2;
+                    sy = 0;
+                } else {
+                    sw = img.naturalWidth;
+                    sh = sw;
+                    sx = 0;
+                    sy = (img.naturalHeight - sh) / 2;
+                }
+
+                // Aplicar zoom
+                const fatorZoom = 1 / escala;
+                const cx = sx + sw/2;
+                const cy = sy + sh/2;
+                sx = cx - (sw * fatorZoom)/2;
+                sy = cy - (sh * fatorZoom)/2;
+                sw = sw * fatorZoom;
+                sh = sh * fatorZoom;
+
+                // Desenhar foto recortada em círculo
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(tamanho/2, tamanho/2, tamanho/2 - 4, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.clip();
+                ctx.drawImage(img, sx, sy, sw, sh, 0, 0, tamanho, tamanho);
+                ctx.restore();
+
+                // Desenhar moldura por cima
+                if (molduraCarregada) {
+                    ctx.drawImage(previewFrame, 0, 0, tamanho, tamanho);
+                }
+
+                // Gerar dataURL para uso posterior (compartilhar)
+                lastDataUrl = canvas.toDataURL('image/png');
+
+                // Download
+                const link = document.createElement('a');
+                link.download = 'Pedro_Gama_4030_Foto_de_Apoio.png';
+                link.href = lastDataUrl;
+                link.click();
+
+                loading.classList.remove('active');
+
+                // Mostrar painel de próximos passos
+                setTimeout(() => {
+                    nextSteps.classList.add('active');
+                    // rolar até o painel em telas pequenas
+                    nextSteps.scrollIntoView({behavior: 'smooth', block: 'center'});
+                }, 250);
+            }, 300);
+        }
+
+        // Compartilhar (Web Share API) — tenta compartilhar o blob gerado
+        async function compartilhar() {
+            if (!fotoCarregada) return;
+            try {
+                // Se não temos a imagem gerada em dataURL, gere rapidamente (sem baixar)
+                if (!lastDataUrl) {
+                    // draw once to canvas (reuse baixarFoto's logic but without download UI)
+                    const tamanho = 1080;
+                    canvas.width = tamanho;
+                    canvas.height = tamanho;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, tamanho, tamanho);
+
+                    const img = previewPhoto;
+                    const escala = zoomAtual / 100;
+                    const imgRatio = img.naturalWidth / img.naturalHeight;
+
+                    let sw, sh, sx, sy;
+                    if (imgRatio > 1) {
+                        sh = img.naturalHeight;
+                        sw = sh;
+                        sx = (img.naturalWidth - sw) / 2;
+                        sy = 0;
+                    } else {
+                        sw = img.naturalWidth;
+                        sh = sw;
+                        sx = 0;
+                        sy = (img.naturalHeight - sh) / 2;
+                    }
+
+                    const fatorZoom = 1 / escala;
+                    const cx = sx + sw/2;
+                    const cy = sy + sh/2;
+                    sx = cx - (sw * fatorZoom)/2;
+                    sy = cy - (sh * fatorZoom)/2;
+                    sw = sw * fatorZoom;
+                    sh = sh * fatorZoom;
+
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(tamanho/2, tamanho/2, tamanho/2 - 4, 0, Math.PI * 2);
+                    ctx.closePath();
+                    ctx.clip();
+                    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, tamanho, tamanho);
+                    ctx.restore();
+
+                    if (molduraCarregada) ctx.drawImage(previewFrame, 0, 0, tamanho, tamanho);
+
+                    lastDataUrl = canvas.toDataURL('image/png');
+                }
+
+                // converter dataURL em blob
+                const blob = await (await fetch(lastDataUrl)).blob();
+                const filesArray = [new File([blob], 'Pedro_Gama_4030.png', { type: blob.type })];
+
+                if (navigator.canShare && navigator.canShare({ files: filesArray })) {
+                    await navigator.share({
+                        files: filesArray,
+                        title: 'Foto de Apoio Pedro Gama 4030',
+                        text: 'Compartilhe minha foto de apoio a Pedro Gama 4030!'
+                    });
+                    // opcional: mostrar o painel de próximo passos
+                    nextSteps.classList.add('active');
+                    return;
+                }
+
+                // fallback: usar share básico com URL (poderá não enviar a imagem)
+                if (navigator.share) {
+                    await navigator.share({
+                        title: 'Foto de Apoio Pedro Gama 4030',
+                        text: 'Baixe e use esta foto de apoio: ',
+                        url: lastDataUrl
+                    });
+                    nextSteps.classList.add('active');
+                    return;
+                }
+
+                // fallback final: abrir a imagem em nova aba para o usuário salvar/compartilhar manualmente
+                const w = window.open(lastDataUrl, '_blank');
+                if (!w) alert('Não foi possível abrir a imagem automaticamente. A imagem foi gerada; você pode salvá-la manualmente.');
+                nextSteps.classList.add('active');
+            } catch (err) {
+                console.error(err);
+                alert('Erro ao compartilhar. Em alguns navegadores móveis a API de compartilhar pode não estar disponível.');
+            }
+        }
+
+        function refazer() {
+            fileInput.value = '';
+            fotoCarregada = false;
+            previewArea.classList.remove('active');
+            controlsArea.classList.remove('active');
+            dropZone.style.display = 'block';
+            zoomRange.value = 100;
+            zoomValue.textContent = '100%';
+            zoomAtual = 100;
+            previewPhoto.style.transform = 'scale(1)';
+            nextSteps.classList.remove('active');
+            lastDataUrl = null;
+        }
+
+        // Tentar abrir app por scheme; fallback para fallbackUrl
+        function openAppScheme(scheme, fallbackUrl) {
+            // Tentativa de abrir esquema; se falhar, abrir fallback após timeout
+            let opened = false;
+            const timeout = 800;
+            const t = setTimeout(function() {
+                if (!opened) {
+                    window.open(fallbackUrl, '_blank');
+                }
+            }, timeout);
+
+            // iOS: usar window.location; Android: criar iframe ou location
+            const now = Date.now();
+            // tentativa padrão
+            try {
+                window.location = scheme;
+                opened = true;
+                clearTimeout(t);
+            } catch (e) {
+                // fallback: criar iframe
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+                try {
+                    iframe.src = scheme;
+                    opened = true;
+                    clearTimeout(t);
+                } catch (err) {
+                    console.warn('esquema não funcionou', err);
+                }
+                setTimeout(() => {
+                    if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+                }, 1000);
+            }
+        }
+
+        // Drag & Drop
+        ['dragenter','dragover','dragleave','drop'].forEach(evt => {
+            dropZone.addEventListener(evt, prevencao, false);
+        });
+        function prevencao(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        ['dragenter','dragover'].forEach(evt => {
+            dropZone.addEventListener(evt, () => {
+                dropZone.style.borderColor = 'var(--amarelo)';
+                dropZone.style.background = 'rgba(245,158,11,0.15)';
+            }, false);
+        });
+        ['dragleave','drop'].forEach(evt => {
+            dropZone.addEventListener(evt, () => {
+                dropZone.style.borderColor = 'rgba(255,255,255,0.4)';
+                dropZone.style.background = 'rgba(255,255,255,0.08)';
+            }, false);
+        });
+        dropZone.addEventListener('drop', function(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length) {
+                processarArquivo(files[0]);
+            }
+        });
+    </script>
+</body>
+</html>
