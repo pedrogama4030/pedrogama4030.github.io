@@ -32,7 +32,8 @@
         .preview-area{display:none;margin-top:20px;text-align:center}
         .preview-area.active{display:block}
         .preview-wrapper{width:280px;height:280px;margin:0 auto;border-radius:50%;overflow:hidden;position:relative;background:#fff;border:4px solid rgba(255,255,255,0.16);box-shadow:0 12px 30px rgba(0,0,0,0.45)}
-        .preview-wrapper canvas{width:100%;height:100%;display:block}
+        .preview-wrapper canvas{width:100%;height:100%;display:block;cursor:grab}
+        .preview-wrapper canvas:active{cursor:grabbing}
         /* hidden image sources */
         #previewPhoto,#previewFrame{display:none}
 
@@ -112,6 +113,10 @@
 
         let fotoCarregada=false, molduraLoaded=false, zoomAtual=100, lastDataUrl=null;
 
+        // Panning state (in source image pixels)
+        let panOffsetX = 0, panOffsetY = 0;
+        let dragging = false, pointerId = null, startPointerX = 0, startPointerY = 0, startPanX = 0, startPanY = 0;
+
         // Load moldura image (point to existing filename)
         const molduraImage = new Image();
         molduraImage.crossOrigin = 'anonymous';
@@ -123,7 +128,7 @@
         fileInput.addEventListener('change', e=>{
             const f = e.target.files[0]; if(!f) return;
             if(!f.type.startsWith('image/')){ alert('Envie uma imagem'); return; }
-            const r=new FileReader(); r.onload = ev => { previewPhoto.src = ev.target.result; previewPhoto.onload = ()=>{ fotoCarregada=true; previewArea.classList.add('active'); controlsArea.classList.add('active'); renderPreview(); } }; r.readAsDataURL(f);
+            const r=new FileReader(); r.onload = ev => { previewPhoto.src = ev.target.result; previewPhoto.onload = ()=>{ fotoCarregada=true; previewArea.classList.add('active'); controlsArea.classList.add('active'); panOffsetX=0; panOffsetY=0; renderPreview(); } }; r.readAsDataURL(f);
         });
 
         // drag & drop
@@ -132,28 +137,130 @@
 
         zoomRange.addEventListener('input', ()=>{ zoomAtual = parseInt(zoomRange.value); zoomValue.textContent = zoomAtual + '%'; renderPreview(); });
 
-        function renderPreview(){ if(!fotoCarregada) return; const dpr = window.devicePixelRatio||1; const size = Math.round(previewCanvas.clientWidth * dpr); previewCanvas.width = size; previewCanvas.height = size; const t=size; previewCtx.clearRect(0,0,t,t);
+        // Pointer handlers for panning (supports mouse & touch)
+        previewCanvas.addEventListener('pointerdown', (e)=>{
+            if(!fotoCarregada) return;
+            previewCanvas.setPointerCapture(e.pointerId);
+            dragging = true; pointerId = e.pointerId;
+            startPointerX = e.clientX; startPointerY = e.clientY;
+            startPanX = panOffsetX; startPanY = panOffsetY;
+        });
+        previewCanvas.addEventListener('pointermove', (e)=>{
+            if(!dragging || e.pointerId !== pointerId) return;
+            const dpr = window.devicePixelRatio || 1;
+            const deltaX = (e.clientX - startPointerX) * dpr;
+            const deltaY = (e.clientY - startPointerY) * dpr;
+            // convert delta in canvas pixels to source image pixels
+            // compute current sw/sh used for draw
+            const img = previewPhoto;
+            const imgRatio = img.naturalWidth / img.naturalHeight;
+            let sw, sh;
+            if (imgRatio > 1) { sh = img.naturalHeight; sw = sh; } else { sw = img.naturalWidth; sh = sw; }
+            const displaySize = previewCanvas.clientWidth; const size = Math.round(displaySize * dpr);
+            const scale = sw / size; // source pixels per canvas pixel
+            panOffsetX = startPanX - Math.round(deltaX * scale);
+            panOffsetY = startPanY - Math.round(deltaY * scale);
+            // clamp after computing sw/sh (clamp in renderPreview when sx/sy calculated)
+            renderPreview();
+        });
+        previewCanvas.addEventListener('pointerup', (e)=>{ if(e.pointerId===pointerId){ previewCanvas.releasePointerCapture(e.pointerId); dragging=false; pointerId=null; } });
+        previewCanvas.addEventListener('pointercancel', (e)=>{ if(e.pointerId===pointerId){ previewCanvas.releasePointerCapture(e.pointerId); dragging=false; pointerId=null; } });
+
+        function renderPreview(){
+            if(!fotoCarregada) return;
+            const dpr = window.devicePixelRatio||1;
+            const displaySize = previewCanvas.clientWidth; // CSS size (e.g., 280)
+            const size = Math.round(displaySize * dpr);
+            previewCanvas.width = size; previewCanvas.height = size;
+            const t = size;
+            previewCtx.clearRect(0,0,t,t);
+
+            const img = previewPhoto;
+            const escala = zoomAtual/100;
+            const imgRatio = img.naturalWidth / img.naturalHeight;
+
+            // Calculate square source crop (sw x sh) centered
+            let sw, sh, sx, sy;
+            if(imgRatio > 1) {
+                sh = img.naturalHeight;
+                sw = sh;
+                sx = Math.floor((img.naturalWidth - sw)/2);
+                sy = 0;
+            } else {
+                sw = img.naturalWidth;
+                sh = sw;
+                sx = 0;
+                sy = Math.floor((img.naturalHeight - sh)/2);
+            }
+
+            // Apply zoom to the source crop
+            const fatorZoom = 1 / escala;
+            const cx = sx + sw/2;
+            const cy = sy + sh/2;
+            sx = Math.floor(cx - (sw * fatorZoom)/2);
+            sy = Math.floor(cy - (sh * fatorZoom)/2);
+            sw = Math.floor(sw * fatorZoom);
+            sh = Math.floor(sh * fatorZoom);
+
+            // Apply pan offsets (panOffsetX/Y are in source pixels)
+            sx = Math.round(sx + panOffsetX);
+            sy = Math.round(sy + panOffsetY);
+
+            // Clamp to source bounds
+            if (sx < 0) sx = 0;
+            if (sy < 0) sy = 0;
+            if (sx + sw > img.naturalWidth) sx = img.naturalWidth - sw;
+            if (sy + sh > img.naturalHeight) sy = img.naturalHeight - sh;
+
             // Draw moldura first (so its transparent center will show photo drawn later)
             if(molduraLoaded) previewCtx.drawImage(molduraImage,0,0,t,t);
+
             // Draw photo inside circular clipping
-            const img = previewPhoto; const escala = zoomAtual/100; const imgRatio = img.naturalWidth / img.naturalHeight; let sw,sh,sx,sy; if(imgRatio>1){ sh=img.naturalHeight; sw=sh; sx=(img.naturalWidth-sw)/2; sy=0; } else { sw=img.naturalWidth; sh=sw; sx=0; sy=(img.naturalHeight-sh)/2; }
-            const fatorZoom = 1/escala; const cx = sx+sw/2; const cy = sy+sh/2; sx = cx - (sw*fatorZoom)/2; sy = cy - (sh*fatorZoom)/2; sw = sw*fatorZoom; sh = sh*fatorZoom;
-            previewCtx.save(); previewCtx.beginPath(); previewCtx.arc(t/2,t/2,t/2-4*dpr,0,Math.PI*2); previewCtx.closePath(); previewCtx.clip(); previewCtx.drawImage(img, sx, sy, sw, sh, 0, 0, t, t); previewCtx.restore();
+            previewCtx.save();
+            previewCtx.beginPath();
+            previewCtx.arc(t/2, t/2, t/2 - 4 * dpr, 0, Math.PI*2);
+            previewCtx.closePath();
+            previewCtx.clip();
+            // draw image: source (sx,sy,sw,sh) -> dest (0,0,t,t)
+            previewCtx.drawImage(img, sx, sy, sw, sh, 0, 0, t, t);
+            previewCtx.restore();
+
             // draw moldura again on top to ensure borders show correctly
             if(molduraLoaded) previewCtx.drawImage(molduraImage,0,0,t,t);
         }
 
-        function baixarFoto(){ if(!fotoCarregada) return; const tamanho=1080; canvasFinal.width=tamanho; canvasFinal.height=tamanho; ctxFinal.clearRect(0,0,tamanho,tamanho); ctxFinal.fillStyle='#ffffff'; ctxFinal.fillRect(0,0,tamanho,tamanho);
+        function baixarFoto(){
+            if(!fotoCarregada) return;
+            const tamanho=1080; canvasFinal.width=tamanho; canvasFinal.height=tamanho; ctxFinal.clearRect(0,0,tamanho,tamanho); ctxFinal.fillStyle='#ffffff'; ctxFinal.fillRect(0,0,tamanho,tamanho);
+
+            const img = previewPhoto;
+            const escala = zoomAtual/100;
+            const imgRatio = img.naturalWidth / img.naturalHeight;
+
+            let sw, sh, sx, sy;
+            if(imgRatio > 1) { sh = img.naturalHeight; sw = sh; sx = Math.floor((img.naturalWidth - sw)/2); sy = 0; } else { sw = img.naturalWidth; sh = sw; sx = 0; sy = Math.floor((img.naturalHeight - sh)/2); }
+            const fatorZoom = 1 / escala; const cx = sx + sw/2; const cy = sy + sh/2;
+            sx = Math.floor(cx - (sw * fatorZoom)/2);
+            sy = Math.floor(cy - (sh * fatorZoom)/2);
+            sw = Math.floor(sw * fatorZoom); sh = Math.floor(sh * fatorZoom);
+
+            // apply pan offsets
+            sx = Math.round(sx + panOffsetX);
+            sy = Math.round(sy + panOffsetY);
+
+            // clamp
+            if (sx < 0) sx = 0; if (sy < 0) sy = 0; if (sx + sw > img.naturalWidth) sx = img.naturalWidth - sw; if (sy + sh > img.naturalHeight) sy = img.naturalHeight - sh;
+
             // draw photo clipped
-            const img = previewPhoto; const escala = zoomAtual/100; const imgRatio = img.naturalWidth / img.naturalHeight; let sw,sh,sx,sy; if(imgRatio>1){ sh=img.naturalHeight; sw=sh; sx=(img.naturalWidth-sw)/2; sy=0; } else { sw=img.naturalWidth; sh=sw; sx=0; sy=(img.naturalHeight-sh)/2; }
-            const fatorZoom = 1/escala; const cx = sx+sw/2; const cy = sy+sh/2; sx = cx - (sw*fatorZoom)/2; sy = cy - (sh*fatorZoom)/2; sw = sw*fatorZoom; sh = sh*fatorZoom;
-            ctxFinal.save(); ctxFinal.beginPath(); ctxFinal.arc(tamanho/2,tamanho/2,tamanho/2-4,0,Math.PI*2); ctxFinal.closePath(); ctxFinal.clip(); ctxFinal.drawImage(img,sx,sy,sw,sh,0,0,tamanho,tamanho); ctxFinal.restore();
+            ctxFinal.save(); ctxFinal.beginPath(); ctxFinal.arc(tamanho/2, tamanho/2, tamanho/2-4, 0, Math.PI*2); ctxFinal.closePath(); ctxFinal.clip(); ctxFinal.drawImage(img, sx, sy, sw, sh, 0, 0, tamanho, tamanho); ctxFinal.restore();
+
             // draw moldura on top
             if(molduraLoaded) ctxFinal.drawImage(molduraImage,0,0,tamanho,tamanho);
+
             lastDataUrl = canvasFinal.toDataURL('image/png'); const a=document.createElement('a'); a.href=lastDataUrl; a.download='Pedro_Gama_4030_Foto_de_Apoio.png'; a.click();
         }
 
-        function refazer(){ fileInput.value=''; fotoCarregada=false; previewArea.classList.remove('active'); controlsArea.classList.remove('active'); previewCtx.clearRect(0,0,previewCanvas.width,previewCanvas.height); }
+        function refazer(){ fileInput.value=''; fotoCarregada=false; previewArea.classList.remove('active'); controlsArea.classList.remove('active'); previewCtx.clearRect(0,0,previewCanvas.width,previewCanvas.height); panOffsetX=0; panOffsetY=0; }
     </script>
 </body>
 </html>
