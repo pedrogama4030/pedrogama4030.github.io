@@ -113,7 +113,7 @@
 
         let fotoCarregada = false, molduraLoaded = false, zoomAtual = 100, lastDataUrl = null;
 
-        // Panning state (in source image pixels relative to centered crop)
+        // Panning state (em pixels diretos, não relativos)
         let panOffsetX = 0, panOffsetY = 0;
         let dragging = false, pointerId = null, startPointerX = 0, startPointerY = 0, startPanX = 0, startPanY = 0;
 
@@ -165,21 +165,22 @@
             if (!dragging || e.pointerId !== pointerId) return;
             e.preventDefault();
             
-            const dpr = window.devicePixelRatio || 1;
+            // Cálculo simples: pixel por pixel
             const deltaX = e.clientX - startPointerX;
             const deltaY = e.clientY - startPointerY;
 
-            // compute current source crop size according to zoom
+            // Mover 1 pixel no canvas = mover 2-3 pixels na imagem (escala ampliada para sentir natural)
             const img = previewPhoto;
             const baseCrop = Math.min(img.naturalWidth, img.naturalHeight);
             const zoomScale = zoomAtual / 100;
             const sourceSize = Math.max(1, Math.round(baseCrop / zoomScale));
+            
+            // Razão entre tamanho da imagem e tamanho do canvas exibido
+            const canvasDisplaySize = previewCanvas.clientWidth;
+            const scale = sourceSize / canvasDisplaySize;
 
-            const canvasSize = previewCanvas.width; // actual pixels (already accounts for DPR)
-            const sourcePerCanvas = sourceSize / canvasSize; // source pixels per canvas pixel
-
-            panOffsetX = startPanX - Math.round(deltaX * sourcePerCanvas);
-            panOffsetY = startPanY - Math.round(deltaY * sourcePerCanvas);
+            panOffsetX = startPanX - Math.round(deltaX * scale);
+            panOffsetY = startPanY - Math.round(deltaY * scale);
 
             // SEM CLAMPING - permite arrastar livremente
             renderPreview();
