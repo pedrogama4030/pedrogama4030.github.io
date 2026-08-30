@@ -6,362 +6,96 @@
     <title>Pedro Gama 4030 — Crie sua Foto de Apoio</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --azul: #1e3a8a;
-            --azul-escuro: #0f1f4a;
-            --verde: #16a34a;
-            --amarelo: #f59e0b;
-            --laranja: #ea580c;
-            --vermelho: #dc2626;
-            --branco: #ffffff;
-            --cinza: #f3f4f6;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Montserrat', sans-serif;
-            background: linear-gradient(180deg, var(--azul-escuro) 0%, var(--azul) 100%);
-            min-height: 100vh;
-            color: var(--branco);
-            overflow-x: hidden;
-        }
+        :root { --azul: #1e3a8a; --azul-escuro: #0f1f4a; --amarelo: #f59e0b; --laranja: #ea580c; --branco: #ffffff; }
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Montserrat',sans-serif;background:linear-gradient(180deg,var(--azul-escuro),var(--azul));color:var(--branco);min-height:100vh}
 
-        /* Banner topo */
-        .banner-topo {
-            width: 100%;
-            max-height: 220px;
-            overflow: hidden;
-            position: relative;
-        }
-        .banner-topo img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: center top;
-        }
-        .banner-topo::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 60px;
-            background: linear-gradient(to top, var(--azul), transparent);
-        }
+        /* Banner: mostrar inteiro sem cortar */
+        .banner-topo{width:100%;display:flex;align-items:center;justify-content:center;padding:8px 0;background:linear-gradient(180deg,rgba(15,31,74,1),rgba(30,58,138,1))}
+        .banner-topo img{max-width:100%;height:auto;display:block;object-fit:contain}
 
-        /* Container principal */
-        .container {
-            max-width: 520px;
-            margin: 0 auto;
-            padding: 20px;
-            position: relative;
-            z-index: 1;
-        }
+        .container{max-width:520px;margin:0 auto;padding:20px}
+        .faixa-cores{display:flex;height:6px;border-radius:3px;overflow:hidden;margin-bottom:16px}
+        .faixa-cores span{flex:1}
+        .faixa-cores span:nth-child(1){background:#dc2626}
+        .faixa-cores span:nth-child(2){background:#f59e0b}
+        .faixa-cores span:nth-child(3){background:#16a34a}
+        .faixa-cores span:nth-child(4){background:#1e3a8a}
 
-        /* Faixa decorativa */
-        .faixa-cores {
-            display: flex;
-            height: 6px;
-            border-radius: 3px;
-            overflow: hidden;
-            margin-bottom: 25px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        }
-        .faixa-cores span { flex: 1; }
-        .faixa-cores span:nth-child(1) { background: var(--vermelho); }
-        .faixa-cores span:nth-child(2) { background: var(--amarelo); }
-        .faixa-cores span:nth-child(3) { background: var(--verde); }
-        .faixa-cores span:nth-child(4) { background: var(--azul); }
+        h1{text-align:center;font-size:1.6rem;font-weight:800;margin-bottom:8px}
+        h1 span{color:var(--amarelo)}
+        .subtitulo{text-align:center;opacity:.9;margin-bottom:20px}
 
-        h1 {
-            text-align: center;
-            font-size: 1.6rem;
-            font-weight: 800;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        }
-        h1 span { color: var(--amarelo); }
+        .upload-card{background:rgba(255,255,255,0.06);border:2px dashed rgba(255,255,255,0.2);border-radius:16px;padding:28px;text-align:center;cursor:pointer}
+        input[type=file]{display:none}
 
-        .subtitulo {
-            text-align: center;
-            font-size: 0.95rem;
-            opacity: 0.9;
-            margin-bottom: 30px;
-            font-weight: 400;
-        }
+        .preview-area{display:none;margin-top:20px;text-align:center}
+        .preview-area.active{display:block}
 
-        /* Área de upload */
-        .upload-card {
-            background: rgba(255,255,255,0.08);
-            border: 2px dashed rgba(255,255,255,0.4);
-            border-radius: 20px;
-            padding: 35px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            position: relative;
-            overflow: hidden;
+        /*
+          O molde (moldura.png) NÃO é um círculo perfeito: é um círculo com uma
+          faixa retangular "PEDRO GAMA 4030" colada embaixo, então a proporção
+          real da arte é 862x972 (mais alta do que larga). Por isso o wrapper
+          usa aspect-ratio em vez de largura=altura fixas com border-radius:50%
+          -- isso é o que fazia a moldura "esticar" e desalinhar do círculo.
+        */
+        .preview-wrapper{
+            width:min(320px, 82vw);
+            aspect-ratio:862/972;
+            margin:0 auto;
+            border-radius:18px;
+            overflow:hidden;
+            position:relative;
+            background:#fff;
+            box-shadow:0 12px 30px rgba(0,0,0,0.3);
+            touch-action:none;
         }
-        .upload-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(245,158,11,0.1) 0%, transparent 70%);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .upload-card:hover {
-            border-color: var(--amarelo);
-            background: rgba(255,255,255,0.12);
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        .upload-card:hover::before { opacity: 1; }
-        .upload-card .icone {
-            font-size: 3rem;
-            margin-bottom: 12px;
-            display: block;
-        }
-        .upload-card h3 {
-            font-size: 1.1rem;
-            margin-bottom: 6px;
-            font-weight: 700;
-        }
-        .upload-card p {
-            font-size: 0.85rem;
-            opacity: 0.7;
-        }
-        input[type="file"] { display: none; }
+        .preview-wrapper canvas{width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+        .preview-wrapper canvas:active{cursor:grabbing}
+        #previewPhoto{display:none}
 
-        /* Preview */
-        .preview-area {
-            display: none;
-            margin-top: 25px;
-            text-align: center;
-        }
-        .preview-area.active { display: block; }
+        .controls{display:none;margin-top:18px}
+        .controls.active{display:block}
+        .slider-box{background:rgba(255,255,255,0.06);padding:12px;border-radius:12px;margin-bottom:12px}
+        input[type=range]{width:100%}
 
-        .preview-wrapper {
-            position: relative;
-            width: 280px;
-            height: 280px;
-            margin: 0 auto;
-            border-radius: 50%;
-            overflow: hidden;
-            box-shadow: 0 15px 50px rgba(0,0,0,0.5);
-            border: 4px solid rgba(255,255,255,0.2);
-            background: #fff;
-        }
-        .preview-wrapper img {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        #previewFrame {
-            z-index: 2;
-            pointer-events: none;
-        }
-        #previewPhoto {
-            z-index: 1;
-            transition: transform 0.1s;
-        }
+        .botoes{display:flex;gap:10px;justify-content:center}
+        .btn{padding:12px 18px;border-radius:10px;font-weight:700;border:none;cursor:pointer}
+        .btn-primary{background:linear-gradient(135deg,var(--amarelo),var(--laranja));color:#07123a}
+        .btn-secondary{background:rgba(255,255,255,0.12);color:var(--branco)}
 
-        /* Controles */
-        .controls {
-            display: none;
-            margin-top: 25px;
-            animation: fadeIn 0.4s ease;
-        }
-        .controls.active { display: block; }
-
-        .slider-box {
-            background: rgba(255,255,255,0.1);
-            border-radius: 16px;
-            padding: 18px 20px;
-            margin-bottom: 20px;
-        }
-        .slider-box label {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-        .slider-box label span { opacity: 0.7; }
-
-        input[type="range"] {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 8px;
-            border-radius: 4px;
-            background: rgba(255,255,255,0.2);
-            outline: none;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: var(--amarelo);
-            cursor: pointer;
-            box-shadow: 0 2px 10px rgba(245,158,11,0.5);
-            border: 3px solid var(--branco);
-        }
-        input[type="range"]::-moz-range-thumb {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: var(--amarelo);
-            cursor: pointer;
-            border: 3px solid var(--branco);
-            box-shadow: 0 2px 10px rgba(245,158,11,0.5);
-        }
-
-        .botoes {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        .btn {
-            padding: 14px 28px;
-            border-radius: 12px;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
-            font-size: 0.95rem;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--amarelo), var(--laranja));
-            color: var(--azul-escuro);
-            box-shadow: 0 6px 20px rgba(245,158,11,0.4);
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(245,158,11,0.6);
-        }
-        .btn-secondary {
-            background: rgba(255,255,255,0.15);
-            color: var(--branco);
-            border: 1px solid rgba(255,255,255,0.3);
-        }
-        .btn-secondary:hover {
-            background: rgba(255,255,255,0.25);
-        }
-
-        /* Rodapé */
-        .rodape {
-            text-align: center;
-            margin-top: 40px;
-            padding-bottom: 30px;
-            opacity: 0.6;
-            font-size: 0.75rem;
-        }
-        .rodape strong {
-            color: var(--amarelo);
-            font-weight: 700;
-        }
-
-        /* Animações */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-        .pulse { animation: pulse 2s infinite; }
-
-        /* Loading */
-        .loading-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(15,31,74,0.9);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-        }
-        .loading-overlay.active { display: flex; }
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(255,255,255,0.2);
-            border-top-color: var(--amarelo);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-bottom: 15px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* Canvas hidden */
-        #canvasFinal { display: none; }
-
-        /* Responsivo */
-        @media (max-width: 480px) {
-            .banner-topo { max-height: 140px; }
-            h1 { font-size: 1.3rem; }
-            .preview-wrapper { width: 240px; height: 240px; }
-            .upload-card { padding: 25px 15px; }
-            .btn { padding: 12px 20px; font-size: 0.85rem; }
-        }
+        .rodape{text-align:center;margin-top:28px;opacity:.7;font-size:.85rem}
     </style>
 </head>
 <body>
 
-    <!-- Banner -->
     <div class="banner-topo">
-        <img src="banner.png" alt="Pedro Gama 4030 - É por Minas, é pra valer!">
+        <img src="./banner.png" alt="Banner Pedro Gama 4030">
     </div>
 
     <div class="container">
-        <!-- Faixa de cores -->
-        <div class="faixa-cores">
-            <span></span><span></span><span></span><span></span>
-        </div>
-
+        <div class="faixa-cores"><span></span><span></span><span></span><span></span></div>
         <h1>Crie sua Foto de <span>Apoio</span></h1>
-        <p class="subtitulo">Escolha sua foto, ajuste e baixe para usar no perfil!</p>
+        <p class="subtitulo">Escolha sua foto, ajuste e baixe</p>
 
-        <!-- Upload -->
-        <div class="upload-card" id="dropZone" onclick="document.getElementById('fileInput').click()">
-            <span class="icone">📷</span>
-            <h3>Clique ou arraste sua foto</h3>
-            <p>JPG, PNG ou WEBP • Sem anúncios • Sem marca d'água</p>
+        <div class="upload-card" id="dropZone" onclick="fileInput.click()">
+            <div style="font-size:28px">📷</div>
+            <div style="font-weight:700;margin-top:8px">Clique ou arraste sua foto</div>
+            <div style="opacity:.85;margin-top:6px">JPG / PNG / WEBP</div>
         </div>
-        <input type="file" id="fileInput" accept="image/*">
+        <input id="fileInput" type="file" accept="image/*">
 
-        <!-- Preview -->
-        <div class="preview-area" id="previewArea">
+        <div id="previewArea" class="preview-area">
             <div class="preview-wrapper">
-                <img id="previewPhoto" alt="Sua foto">
-                <img id="previewFrame" src="moldura.png" alt="Moldura Pedro Gama 4030">
+                <canvas id="previewCanvas"></canvas>
+                <img id="previewPhoto" alt="source">
             </div>
         </div>
 
-        <!-- Controles -->
-        <div class="controls" id="controlsArea">
+        <div id="controlsArea" class="controls">
             <div class="slider-box">
-                <label>
-                    🔍 Ajustar tamanho
-                    <span id="zoomValue">100%</span>
-                </label>
-                <input type="range" id="zoomRange" min="50" max="200" value="100">
+                <label style="display:flex;justify-content:space-between;align-items:center;font-weight:700">🔍 Ajustar tamanho <span id="zoomValue">100%</span></label>
+                <input id="zoomRange" type="range" min="50" max="200" value="100">
             </div>
             <div class="botoes">
                 <button class="btn btn-primary" onclick="baixarFoto()">⬇️ Baixar Foto</button>
@@ -369,184 +103,201 @@
             </div>
         </div>
 
-        <div class="rodape">
-            <p><strong>PEDRO GAMA 4030</strong> • Deputado Federal • É por Minas, é pra valer!</p>
-        </div>
+        <div class="rodape"> <strong>PEDRO GAMA 4030</strong> • É por Minas, é pra valer!</div>
     </div>
 
-    <!-- Loading -->
-    <div class="loading-overlay" id="loading">
-        <div class="spinner"></div>
-        <p>Gerando sua foto em alta qualidade...</p>
-    </div>
-
-    <canvas id="canvasFinal" width="1080" height="1080"></canvas>
+    <canvas id="canvasFinal" style="display:none"></canvas>
 
     <script>
         const fileInput = document.getElementById('fileInput');
         const dropZone = document.getElementById('dropZone');
         const previewArea = document.getElementById('previewArea');
         const previewPhoto = document.getElementById('previewPhoto');
-        const previewFrame = document.getElementById('previewFrame');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const previewCtx = previewCanvas.getContext('2d');
         const controlsArea = document.getElementById('controlsArea');
         const zoomRange = document.getElementById('zoomRange');
         const zoomValue = document.getElementById('zoomValue');
-        const loading = document.getElementById('loading');
-        const canvas = document.getElementById('canvasFinal');
-        const ctx = canvas.getContext('2d');
+        const canvasFinal = document.getElementById('canvasFinal');
+        const ctxFinal = canvasFinal.getContext('2d');
 
-        let fotoCarregada = false;
-        let molduraCarregada = false;
-        let zoomAtual = 100;
+        // ---- Geometria real do furo circular dentro de moldura.png ----
+        // Medida diretamente na imagem (862x972): centro e raio do círculo
+        // onde a foto deve aparecer. Como frações da largura/altura da
+        // moldura, então funcionam em qualquer resolução de saída.
+        const HOLE_CX_FRAC = 0.49746921862382604; // relativo à largura
+        const HOLE_CY_FRAC = 0.4967680136192201;  // relativo à altura
+        const HOLE_R_FRAC  = 0.3082262758284626;  // relativo à largura
 
-        // Verificar se moldura carregou
-        previewFrame.onload = () => { molduraCarregada = true; };
-        previewFrame.onerror = () => { 
-            alert('Erro ao carregar a moldura. Verifique se o arquivo "moldura.png" está na mesma pasta.');
-        };
+        const OUTPUT_WIDTH = 1080; // resolução final (px) do download
 
-        // Upload
-        fileInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            processarArquivo(file);
-        });
+        let fotoCarregada = false, molduraLoaded = false, zoomAtual = 100;
 
-        function processarArquivo(file) {
-            if (!file.type.startsWith('image/')) {
-                alert('Por favor, envie apenas imagens (JPG, PNG, WEBP).');
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                previewPhoto.src = evt.target.result;
-                previewPhoto.onload = function() {
+        // Pan (em pixels da imagem de origem, sem clamping — arraste livre)
+        let panOffsetX = 0, panOffsetY = 0;
+        let dragging = false, pointerId = null, startPointerX = 0, startPointerY = 0, startPanX = 0, startPanY = 0;
+
+        const molduraImage = new Image();
+        molduraImage.crossOrigin = 'anonymous';
+        molduraImage.src = './moldura.png';
+        molduraImage.onload = () => { molduraLoaded = true; renderPreview(); };
+        molduraImage.onerror = () => { console.warn('Erro ao carregar moldura.png — confira o nome/caminho do arquivo no repositório.'); };
+
+        fileInput.addEventListener('change', e => {
+            const f = e.target.files[0]; if (!f) return;
+            if (!f.type.startsWith('image/')) { alert('Envie uma imagem'); return; }
+            const r = new FileReader();
+            r.onload = ev => {
+                previewPhoto.src = ev.target.result;
+                previewPhoto.onload = () => {
                     fotoCarregada = true;
                     previewArea.classList.add('active');
                     controlsArea.classList.add('active');
-                    dropZone.style.display = 'none';
-                    aplicarZoom();
+                    zoomAtual = 100; zoomRange.value = 100; zoomValue.textContent = '100%';
+                    panOffsetX = 0; panOffsetY = 0;
+                    renderPreview();
                 };
             };
-            reader.readAsDataURL(file);
-        }
-
-        // Zoom
-        zoomRange.addEventListener('input', function() {
-            zoomAtual = parseInt(this.value);
-            zoomValue.textContent = zoomAtual + '%';
-            aplicarZoom();
+            r.readAsDataURL(f);
         });
 
-        function aplicarZoom() {
-            const escala = zoomAtual / 100;
-            previewPhoto.style.transform = 'scale(' + escala + ')';
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => dropZone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); }));
+        dropZone.addEventListener('drop', e => { const dt = e.dataTransfer; if (dt && dt.files && dt.files.length) { fileInput.files = dt.files; fileInput.dispatchEvent(new Event('change')); } });
+
+        zoomRange.addEventListener('input', () => { zoomAtual = parseInt(zoomRange.value); zoomValue.textContent = zoomAtual + '%'; renderPreview(); });
+
+        previewCanvas.addEventListener('pointerdown', (e) => {
+            if (!fotoCarregada) return;
+            e.preventDefault();
+            previewCanvas.setPointerCapture(e.pointerId);
+            dragging = true;
+            pointerId = e.pointerId;
+            startPointerX = e.clientX;
+            startPointerY = e.clientY;
+            startPanX = panOffsetX;
+            startPanY = panOffsetY;
+        });
+
+        previewCanvas.addEventListener('pointermove', (e) => {
+            if (!dragging || e.pointerId !== pointerId) return;
+            e.preventDefault();
+
+            const deltaX = e.clientX - startPointerX;
+            const deltaY = e.clientY - startPointerY;
+
+            const img = previewPhoto;
+            const baseCrop = Math.min(img.naturalWidth, img.naturalHeight);
+            const zoomScale = zoomAtual / 100;
+            const sourceSize = Math.max(1, Math.round(baseCrop / zoomScale));
+
+            // diâmetro do círculo de foto, em pixels CSS (independe do devicePixelRatio)
+            const displayedDiameterCSS = 2 * HOLE_R_FRAC * previewCanvas.clientWidth;
+            const scale = sourceSize / displayedDiameterCSS;
+
+            panOffsetX = startPanX - Math.round(deltaX * scale);
+            panOffsetY = startPanY - Math.round(deltaY * scale);
+
+            renderPreview();
+        });
+
+        function endPointer(e){
+            if(e && e.pointerId && e.pointerId===pointerId){
+                try{ previewCanvas.releasePointerCapture(e.pointerId);}catch(_){ }
+            }
+            dragging=false;
+            pointerId=null;
+        }
+        previewCanvas.addEventListener('pointerup', endPointer);
+        previewCanvas.addEventListener('pointercancel', endPointer);
+
+        function setCanvasSize(){
+            const dpr = window.devicePixelRatio || 1;
+            const displayW = previewCanvas.clientWidth;
+            const displayH = previewCanvas.clientHeight;
+            previewCanvas.width = Math.round(displayW * dpr);
+            previewCanvas.height = Math.round(displayH * dpr);
         }
 
-        // Download
-        function baixarFoto() {
-            if (!fotoCarregada) return;
-            loading.classList.add('active');
+        // Desenha a foto (recortada em círculo, na posição exata do furo) e
+        // depois a moldura por cima, sem esticar — moldura sempre desenhada
+        // do tamanho exato do canvas, que tem a mesma proporção 862:972 da
+        // arte original, então nada é distorcido e as letras brancas ficam
+        // 100% opacas.
+        function drawComposite(ctx, w, h){
+            ctx.clearRect(0, 0, w, h);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, w, h);
 
-            // Pequeno delay para mostrar o loading
-            setTimeout(() => {
-                const tamanho = 1080;
-                canvas.width = tamanho;
-                canvas.height = tamanho;
-
-                // Fundo branco (caso a foto tenha transparência)
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, tamanho, tamanho);
-
-                // Calcular crop central da foto
+            if (fotoCarregada) {
                 const img = previewPhoto;
-                const escala = zoomAtual / 100;
-                const imgRatio = img.naturalWidth / img.naturalHeight;
+                const baseCrop = Math.min(img.naturalWidth, img.naturalHeight);
+                const zoomScale = zoomAtual / 100;
+                const sourceSize = Math.max(1, Math.round(baseCrop / zoomScale));
+                const sx0 = img.naturalWidth > img.naturalHeight ? Math.floor((img.naturalWidth - baseCrop) / 2) : 0;
+                const sy0 = img.naturalHeight > img.naturalWidth ? Math.floor((img.naturalHeight - baseCrop) / 2) : 0;
+                const sx = sx0 + Math.round(panOffsetX);
+                const sy = sy0 + Math.round(panOffsetY);
 
-                let sw, sh, sx, sy;
-                if (imgRatio > 1) {
-                    sh = img.naturalHeight;
-                    sw = sh;
-                    sx = (img.naturalWidth - sw) / 2;
-                    sy = 0;
-                } else {
-                    sw = img.naturalWidth;
-                    sh = sw;
-                    sx = 0;
-                    sy = (img.naturalHeight - sh) / 2;
-                }
+                const holeCX = HOLE_CX_FRAC * w;
+                const holeCY = HOLE_CY_FRAC * h;
+                const holeR  = HOLE_R_FRAC * w;
+                const destSize = holeR * 2;
+                const destX = holeCX - holeR;
+                const destY = holeCY - holeR;
 
-                // Aplicar zoom
-                const fatorZoom = 1 / escala;
-                const cx = sx + sw/2;
-                const cy = sy + sh/2;
-                sx = cx - (sw * fatorZoom)/2;
-                sy = cy - (sh * fatorZoom)/2;
-                sw = sw * fatorZoom;
-                sh = sh * fatorZoom;
-
-                // Desenhar foto recortada em círculo
                 ctx.save();
                 ctx.beginPath();
-                ctx.arc(tamanho/2, tamanho/2, tamanho/2 - 4, 0, Math.PI * 2);
+                ctx.arc(holeCX, holeCY, holeR, 0, Math.PI * 2);
                 ctx.closePath();
                 ctx.clip();
-                ctx.drawImage(img, sx, sy, sw, sh, 0, 0, tamanho, tamanho);
+                ctx.drawImage(img, sx, sy, sourceSize, sourceSize, destX, destY, destSize, destSize);
                 ctx.restore();
+            }
 
-                // Desenhar moldura por cima
-                if (molduraCarregada) {
-                    ctx.drawImage(previewFrame, 0, 0, tamanho, tamanho);
-                }
-
-                // Download
-                const link = document.createElement('a');
-                link.download = 'Pedro_Gama_4030_Foto_de_Apoio.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-
-                loading.classList.remove('active');
-            }, 300);
+            if (molduraLoaded) {
+                ctx.drawImage(molduraImage, 0, 0, w, h);
+            }
         }
 
-        function refazer() {
+        function renderPreview(){
+            setCanvasSize();
+            drawComposite(previewCtx, previewCanvas.width, previewCanvas.height);
+        }
+
+        function baixarFoto(){
+            if(!fotoCarregada) return;
+            const outW = OUTPUT_WIDTH;
+            const outH = Math.round(outW * molduraImage.naturalHeight / molduraImage.naturalWidth);
+            canvasFinal.width = outW;
+            canvasFinal.height = outH;
+
+            drawComposite(ctxFinal, outW, outH);
+
+            const dataUrl = canvasFinal.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = 'Pedro_Gama_4030_Foto_de_Apoio.png';
+            a.click();
+        }
+
+        function refazer(){
             fileInput.value = '';
             fotoCarregada = false;
             previewArea.classList.remove('active');
             controlsArea.classList.remove('active');
-            dropZone.style.display = 'block';
-            zoomRange.value = 100;
-            zoomValue.textContent = '100%';
-            zoomAtual = 100;
-            previewPhoto.style.transform = 'scale(1)';
+            previewCtx.clearRect(0,0,previewCanvas.width, previewCanvas.height);
         }
 
-        // Drag & Drop
-        ['dragenter','dragover','dragleave','drop'].forEach(evt => {
-            dropZone.addEventListener(evt, prevencao, false);
-        });
-        function prevencao(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        ['dragenter','dragover'].forEach(evt => {
-            dropZone.addEventListener(evt, () => {
-                dropZone.style.borderColor = 'var(--amarelo)';
-                dropZone.style.background = 'rgba(245,158,11,0.15)';
-            }, false);
-        });
-        ['dragleave','drop'].forEach(evt => {
-            dropZone.addEventListener(evt, () => {
-                dropZone.style.borderColor = 'rgba(255,255,255,0.4)';
-                dropZone.style.background = 'rgba(255,255,255,0.08)';
-            }, false);
-        });
-        dropZone.addEventListener('drop', function(e) {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            if (files.length) {
-                processarArquivo(files[0]);
-            }
+        window.addEventListener('resize', ()=>{ if (fotoCarregada || molduraLoaded) renderPreview(); });
+
+        previewCanvas.addEventListener('dblclick', ()=>{
+            if(!fotoCarregada) return;
+            zoomAtual = 100;
+            zoomRange.value = 100;
+            zoomValue.textContent = '100%';
+            panOffsetX = 0;
+            panOffsetY = 0;
+            renderPreview();
         });
     </script>
 </body>
