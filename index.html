@@ -31,8 +31,8 @@
 
         .preview-area{display:none;margin-top:20px;text-align:center}
         .preview-area.active{display:block}
-        .preview-wrapper{width:280px;height:280px;margin:0 auto;border-radius:50%;overflow:hidden;position:relative;background:#fff;border:4px solid rgba(255,255,255,0.16);box-shadow:0 12px 30px rgba(0,0,0,0.3)}
-        .preview-wrapper canvas{width:100%;height:100%;display:block;cursor:grab}
+        .preview-wrapper{width:280px;height:280px;margin:0 auto;border-radius:50%;overflow:hidden;position:relative;background:#fff;border:4px solid rgba(255,255,255,0.16);box-shadow:0 12px 30px rgba(0,0,0,0.3);touch-action:none}
+        .preview-wrapper canvas{width:100%;height:100%;display:block;cursor:grab;touch-action:none}
         .preview-wrapper canvas:active{cursor:grabbing}
         /* hidden image sources */
         #previewPhoto,#previewFrame{display:none}
@@ -151,14 +151,20 @@
         // Pointer handlers for panning (supports mouse & touch)
         previewCanvas.addEventListener('pointerdown', (e) => {
             if (!fotoCarregada) return;
+            e.preventDefault();
             previewCanvas.setPointerCapture(e.pointerId);
-            dragging = true; pointerId = e.pointerId;
-            startPointerX = e.clientX; startPointerY = e.clientY;
-            startPanX = panOffsetX; startPanY = panOffsetY;
+            dragging = true; 
+            pointerId = e.pointerId;
+            startPointerX = e.clientX; 
+            startPointerY = e.clientY;
+            startPanX = panOffsetX; 
+            startPanY = panOffsetY;
         });
 
         previewCanvas.addEventListener('pointermove', (e) => {
             if (!dragging || e.pointerId !== pointerId) return;
+            e.preventDefault();
+            
             const dpr = window.devicePixelRatio || 1;
             const deltaX = e.clientX - startPointerX;
             const deltaY = e.clientY - startPointerY;
@@ -172,19 +178,31 @@
             const canvasSize = previewCanvas.width; // actual pixels (already accounts for DPR)
             const sourcePerCanvas = sourceSize / canvasSize; // source pixels per canvas pixel
 
-            panOffsetX = startPanX - Math.round(deltaX * dpr * sourcePerCanvas);
-            panOffsetY = startPanY - Math.round(deltaY * dpr * sourcePerCanvas);
+            panOffsetX = startPanX - Math.round(deltaX * sourcePerCanvas);
+            panOffsetY = startPanY - Math.round(deltaY * sourcePerCanvas);
 
             // SEM CLAMPING - permite arrastar livremente
             renderPreview();
         });
 
-        function endPointer(e){ if(e && e.pointerId && e.pointerId===pointerId){ try{ previewCanvas.releasePointerCapture(e.pointerId);}catch(_){ } } dragging=false; pointerId=null; }
+        function endPointer(e){ 
+            if(e && e.pointerId && e.pointerId===pointerId){ 
+                try{ previewCanvas.releasePointerCapture(e.pointerId);}catch(_){ } 
+            } 
+            dragging=false; 
+            pointerId=null; 
+        }
         previewCanvas.addEventListener('pointerup', endPointer);
         previewCanvas.addEventListener('pointercancel', endPointer);
 
         // ensure canvas uses device pixel ratio for sharpness
-        function setCanvasSize(){ const dpr = window.devicePixelRatio || 1; const displaySize = previewCanvas.clientWidth; const size = Math.round(displaySize * dpr); previewCanvas.width = size; previewCanvas.height = size; }
+        function setCanvasSize(){ 
+            const dpr = window.devicePixelRatio || 1; 
+            const displaySize = previewCanvas.clientWidth; 
+            const size = Math.round(displaySize * dpr); 
+            previewCanvas.width = size; 
+            previewCanvas.height = size; 
+        }
 
         function renderPreview(){
             if(!fotoCarregada) return;
@@ -228,7 +246,9 @@
         // download
         function baixarFoto(){
             if(!fotoCarregada) return;
-            const tamanho = 1080; canvasFinal.width = tamanho; canvasFinal.height = tamanho; 
+            const tamanho = 1080; 
+            canvasFinal.width = tamanho; 
+            canvasFinal.height = tamanho; 
             
             // Preenche com branco antes
             ctxFinal.fillStyle = '#ffffff'; 
@@ -243,25 +263,52 @@
             let sx = sx0 + Math.round(panOffsetX);
             let sy = sy0 + Math.round(panOffsetY);
 
-            ctxFinal.save(); ctxFinal.beginPath(); ctxFinal.arc(tamanho/2, tamanho/2, tamanho/2-4, 0, Math.PI*2); ctxFinal.closePath(); ctxFinal.clip();
+            ctxFinal.save(); 
+            ctxFinal.beginPath(); 
+            ctxFinal.arc(tamanho/2, tamanho/2, tamanho/2-4, 0, Math.PI*2); 
+            ctxFinal.closePath(); 
+            ctxFinal.clip();
             ctxFinal.drawImage(img, sx, sy, sourceSize, sourceSize, 0, 0, tamanho, tamanho);
             ctxFinal.restore();
 
             if(molduraLoaded) ctxFinal.drawImage(molduraImage,0,0,tamanho,tamanho);
 
-            lastDataUrl = canvasFinal.toDataURL('image/png'); const a = document.createElement('a'); a.href = lastDataUrl; a.download = 'Pedro_Gama_4030_Foto_de_Apoio.png'; a.click();
+            lastDataUrl = canvasFinal.toDataURL('image/png'); 
+            const a = document.createElement('a'); 
+            a.href = lastDataUrl; 
+            a.download = 'Pedro_Gama_4030_Foto_de_Apoio.png'; 
+            a.click();
         }
 
-        function refazer(){ fileInput.value = ''; fotoCarregada = false; previewArea.classList.remove('active'); controlsArea.classList.remove('active'); previewCtx.clearRect(0,0,previewCanvas.width, previewCanvas.height); }
+        function refazer(){ 
+            fileInput.value = ''; 
+            fotoCarregada = false; 
+            previewArea.classList.remove('active'); 
+            controlsArea.classList.remove('active'); 
+            previewCtx.clearRect(0,0,previewCanvas.width, previewCanvas.height); 
+        }
 
         // ensure pan is updated when window resized
         window.addEventListener('resize', ()=>{ renderPreview(); });
 
         // optional: double click to reset
-        previewCanvas.addEventListener('dblclick', ()=>{ if(!fotoCarregada) return; zoomAtual = 100; zoomRange.value = 100; zoomValue.textContent = '100%'; panOffsetX = 0; panOffsetY = 0; renderPreview(); });
+        previewCanvas.addEventListener('dblclick', ()=>{ 
+            if(!fotoCarregada) return; 
+            zoomAtual = 100; 
+            zoomRange.value = 100; 
+            zoomValue.textContent = '100%'; 
+            panOffsetX = 0; 
+            panOffsetY = 0; 
+            renderPreview(); 
+        });
 
         // initialize if frame image is already present
-        if(previewPhoto.complete && previewPhoto.naturalWidth) { fotoCarregada = true; previewArea.classList.add('active'); controlsArea.classList.add('active'); renderPreview(); }
+        if(previewPhoto.complete && previewPhoto.naturalWidth) { 
+            fotoCarregada = true; 
+            previewArea.classList.add('active'); 
+            controlsArea.classList.add('active'); 
+            renderPreview(); 
+        }
     </script>
 </body>
 </html>
