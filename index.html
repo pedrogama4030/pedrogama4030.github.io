@@ -211,7 +211,7 @@
             const dpr = window.devicePixelRatio||1;
             const t = previewCanvas.width;
             
-            // Preenche com branco antes de desenhar (fundo)
+            // Preenche com branco o canvas inteiro
             previewCtx.fillStyle = '#ffffff';
             previewCtx.fillRect(0, 0, t, t);
 
@@ -240,7 +240,7 @@
             
             previewCtx.restore();
 
-            // draw moldura on top
+            // draw moldura on top - FORA do clipping para manter letras brancas visíveis
             if(molduraLoaded) previewCtx.drawImage(molduraImage, 0, 0, t, t);
         }
 
@@ -251,7 +251,7 @@
             canvasFinal.width = tamanho; 
             canvasFinal.height = tamanho; 
             
-            // Preenche com branco antes
+            // Preenche com branco
             ctxFinal.fillStyle = '#ffffff'; 
             ctxFinal.fillRect(0, 0, tamanho, tamanho);
 
@@ -272,6 +272,7 @@
             ctxFinal.drawImage(img, sx, sy, sourceSize, sourceSize, 0, 0, tamanho, tamanho);
             ctxFinal.restore();
 
+            // Draw moldura on top - FORA do clipping para manter letras brancas visíveis
             if(molduraLoaded) ctxFinal.drawImage(molduraImage,0,0,tamanho,tamanho);
 
             lastDataUrl = canvasFinal.toDataURL('image/png'); 
