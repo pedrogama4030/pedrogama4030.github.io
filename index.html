@@ -54,7 +54,7 @@
 <body>
 
     <div class="banner-topo">
-        <!-- use the exact filename that exists in the repo; banner.png.png is kept as uploaded -->
+        <!-- using the banner filename present in repo -->
         <img src="./banner.png.png" alt="Banner Pedro Gama 4030">
     </div>
 
@@ -75,8 +75,8 @@
                 <canvas id="previewCanvas" width="560" height="560"></canvas>
                 <!-- hidden sources (used to draw into canvas) -->
                 <img id="previewPhoto" alt="source">
-                <!-- reference the exact uploaded transparent moldura file (encode space as %20) -->
-                <img id="previewFrame" src="./moldura%20(1).png" alt="moldura">
+                <!-- reference the exact uploaded transparent moldura file -->
+                <img id="previewFrame" src="./moldura.png.png" alt="moldura">
             </div>
         </div>
 
@@ -112,11 +112,11 @@
 
         let fotoCarregada=false, molduraLoaded=false, zoomAtual=100, lastDataUrl=null;
 
-        // Load moldura image (ensure correct path and handle spaces)
+        // Load moldura image (point to existing filename)
         const molduraImage = new Image();
         molduraImage.crossOrigin = 'anonymous';
-        molduraImage.src = './moldura%20(1).png';
-        molduraImage.onload = () => { molduraLoaded = true; }
+        molduraImage.src = './moldura.png.png';
+        molduraImage.onload = () => { molduraLoaded = true; renderPreview(); }
         molduraImage.onerror = () => { console.warn('Erro carregando moldura. Verifique filename e permissões.'); }
 
         // File input handling
@@ -139,7 +139,7 @@
             const img = previewPhoto; const escala = zoomAtual/100; const imgRatio = img.naturalWidth / img.naturalHeight; let sw,sh,sx,sy; if(imgRatio>1){ sh=img.naturalHeight; sw=sh; sx=(img.naturalWidth-sw)/2; sy=0; } else { sw=img.naturalWidth; sh=sw; sx=0; sy=(img.naturalHeight-sh)/2; }
             const fatorZoom = 1/escala; const cx = sx+sw/2; const cy = sy+sh/2; sx = cx - (sw*fatorZoom)/2; sy = cy - (sh*fatorZoom)/2; sw = sw*fatorZoom; sh = sh*fatorZoom;
             previewCtx.save(); previewCtx.beginPath(); previewCtx.arc(t/2,t/2,t/2-4*dpr,0,Math.PI*2); previewCtx.closePath(); previewCtx.clip(); previewCtx.drawImage(img, sx, sy, sw, sh, 0, 0, t, t); previewCtx.restore();
-            // If moldura is not transparent and covers center, draw moldura again on top to ensure borders show correctly
+            // draw moldura again on top to ensure borders show correctly
             if(molduraLoaded) previewCtx.drawImage(molduraImage,0,0,t,t);
         }
 
