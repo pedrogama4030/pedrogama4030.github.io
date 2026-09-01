@@ -118,6 +118,7 @@
 
     <canvas id="canvasFinal" style="display:none"></canvas>
     <a id="hiddenLink" style="display:none"></a>
+    <img id="hiddenImg" style="display:none" />
 
     <script>
         const fileInput = document.getElementById('fileInput');
@@ -132,6 +133,7 @@
         const canvasFinal = document.getElementById('canvasFinal');
         const ctxFinal = canvasFinal.getContext('2d');
         const hiddenLink = document.getElementById('hiddenLink');
+        const hiddenImg = document.getElementById('hiddenImg');
 
         // ---- Geometria real do furo circular dentro de moldura.png ----
         // Medida diretamente na imagem (862x972): centro e raio do círculo
@@ -285,36 +287,35 @@
 
             drawComposite(ctxFinal, outW, outH);
 
-            // Compatível com iOS/iPhone
-            canvasFinal.toBlob(blob => {
-                if (!blob) {
-                    alert('Erro ao gerar a imagem. Tente novamente.');
-                    return;
-                }
-
-                // Detecta iOS/Safari
-                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-                const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-                
-                if (isIOS || isSafari) {
-                    // iOS: Converte blob para data URL (método mais confiável)
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        hiddenLink.href = e.target.result;
-                        hiddenLink.download = 'Pedro_Gama_4030_Foto_de_Apoio.png';
-                        // Abre a imagem em nova aba para o usuário salvar manualmente
-                        setTimeout(() => window.open(e.target.result, '_blank'), 100);
-                    };
-                    reader.readAsDataURL(blob);
-                } else {
-                    // Outros navegadores: download direto com blob URL
+            // Detecta iOS/Safari
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+            
+            if (isIOS || isSafari) {
+                // iOS: Converte para imagem e força download
+                const imgData = canvasFinal.toDataURL('image/png');
+                hiddenImg.src = imgData;
+                hiddenImg.onload = () => {
+                    hiddenLink.href = imgData;
+                    hiddenLink.download = 'Pedro_Gama_4030_Foto_de_Apoio.png';
+                    // Tenta simular clique para download ou abre em nova aba
+                    if (hiddenLink.download) {
+                        hiddenLink.click();
+                    } else {
+                        // Fallback: apenas abre a imagem
+                        window.location.href = imgData;
+                    }
+                };
+            } else {
+                // Outros navegadores: usa blob para melhor performance
+                canvasFinal.toBlob(blob => {
                     const blobUrl = URL.createObjectURL(blob);
                     hiddenLink.href = blobUrl;
                     hiddenLink.download = 'Pedro_Gama_4030_Foto_de_Apoio.png';
                     hiddenLink.click();
                     setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
-                }
-            }, 'image/png');
+                }, 'image/png');
+            }
         }
 
         function refazer(){
