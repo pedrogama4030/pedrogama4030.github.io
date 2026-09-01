@@ -12,7 +12,7 @@
 
         /* Banner: mostrar inteiro sem cortar */
         .banner-topo{width:100%;display:flex;align-items:center;justify-content:center;padding:8px 0;background:linear-gradient(180deg,rgba(15,31,74,1),rgba(30,58,138,1))}
-        .banner-topo img{max-width:100%;height:auto;display:block;object-fit:contain}
+        .banner-topo img{max-width:100%;height:auto;display:block;object-fit:contain;max-height:100px}
 
         .container{max-width:520px;margin:0 auto;padding:20px}
         .faixa-cores{display:flex;height:6px;border-radius:3px;overflow:hidden;margin-bottom:16px}
@@ -59,12 +59,23 @@
         .slider-box{background:rgba(255,255,255,0.06);padding:12px;border-radius:12px;margin-bottom:12px}
         input[type=range]{width:100%}
 
-        .botoes{display:flex;gap:10px;justify-content:center}
-        .btn{padding:12px 18px;border-radius:10px;font-weight:700;border:none;cursor:pointer}
+        .botoes{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+        .btn{padding:12px 18px;border-radius:10px;font-weight:700;border:none;cursor:pointer;font-size:1rem}
         .btn-primary{background:linear-gradient(135deg,var(--amarelo),var(--laranja));color:#07123a}
         .btn-secondary{background:rgba(255,255,255,0.12);color:var(--branco)}
 
         .rodape{text-align:center;margin-top:28px;opacity:.7;font-size:.85rem}
+
+        /* Responsivo mobile */
+        @media (max-width: 480px) {
+            .banner-topo{padding:6px 0}
+            .banner-topo img{max-height:80px}
+            .container{padding:16px}
+            h1{font-size:1.4rem}
+            .btn{padding:10px 16px;font-size:0.95rem}
+        }
+
+        #hiddenLink{display:none}
     </style>
 </head>
 <body>
@@ -107,6 +118,7 @@
     </div>
 
     <canvas id="canvasFinal" style="display:none"></canvas>
+    <a id="hiddenLink" style="display:none"></a>
 
     <script>
         const fileInput = document.getElementById('fileInput');
@@ -120,6 +132,7 @@
         const zoomValue = document.getElementById('zoomValue');
         const canvasFinal = document.getElementById('canvasFinal');
         const ctxFinal = canvasFinal.getContext('2d');
+        const hiddenLink = document.getElementById('hiddenLink');
 
         // ---- Geometria real do furo circular dentro de moldura.png ----
         // Medida diretamente na imagem (862x972): centro e raio do círculo
@@ -273,11 +286,32 @@
 
             drawComposite(ctxFinal, outW, outH);
 
-            const dataUrl = canvasFinal.toDataURL('image/png');
-            const a = document.createElement('a');
-            a.href = dataUrl;
-            a.download = 'Pedro_Gama_4030_Foto_de_Apoio.png';
-            a.click();
+            // Compatível com iOS/iPhone - usa Blob em vez de Data URL
+            canvasFinal.toBlob(blob => {
+                if (!blob) {
+                    alert('Erro ao gerar a imagem. Tente novamente.');
+                    return;
+                }
+
+                const blobUrl = URL.createObjectURL(blob);
+                hiddenLink.href = blobUrl;
+                hiddenLink.download = 'Pedro_Gama_4030_Foto_de_Apoio.png';
+                
+                // Detecta iOS/Safari
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+                
+                if (isIOS || isSafari) {
+                    // No iOS, abre em nova aba para o usuário salvar
+                    window.open(blobUrl, '_blank');
+                } else {
+                    // Em outros navegadores, faz download direto
+                    hiddenLink.click();
+                }
+                
+                // Limpa o blob URL após um tempo
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+            }, 'image/png');
         }
 
         function refazer(){
