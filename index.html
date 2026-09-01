@@ -11,8 +11,8 @@
         body{font-family:'Montserrat',sans-serif;background:linear-gradient(180deg,var(--azul-escuro),var(--azul));color:var(--branco);min-height:100vh}
 
         /* Banner: mostrar inteiro sem cortar */
-        .banner-topo{width:100%;display:flex;align-items:center;justify-content:center;padding:8px 0;background:linear-gradient(180deg,rgba(15,31,74,1),rgba(30,58,138,1))}
-        .banner-topo img{max-width:100%;height:auto;display:block;object-fit:contain;max-height:100px}
+        .banner-topo{width:100%;display:flex;align-items:center;justify-content:center;padding:12px 0;background:linear-gradient(180deg,rgba(15,31,74,1),rgba(30,58,138,1))}
+        .banner-topo img{max-width:100%;height:auto;display:block;object-fit:contain;min-height:120px}
 
         .container{max-width:520px;margin:0 auto;padding:20px}
         .faixa-cores{display:flex;height:6px;border-radius:3px;overflow:hidden;margin-bottom:16px}
@@ -67,9 +67,14 @@
         .rodape{text-align:center;margin-top:28px;opacity:.7;font-size:.85rem}
 
         /* Responsivo mobile */
+        @media (max-width: 768px) {
+            .banner-topo{padding:14px 0}
+            .banner-topo img{min-height:140px;max-height:140px}
+        }
+
         @media (max-width: 480px) {
-            .banner-topo{padding:6px 0}
-            .banner-topo img{max-height:80px}
+            .banner-topo{padding:12px 0}
+            .banner-topo img{min-height:110px;max-height:110px}
             .container{padding:16px}
             h1{font-size:1.4rem}
             .btn{padding:10px 16px;font-size:0.95rem}
