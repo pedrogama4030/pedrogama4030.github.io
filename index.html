@@ -285,31 +285,35 @@
 
             drawComposite(ctxFinal, outW, outH);
 
-            // Compatível com iOS/iPhone - usa Blob em vez de Data URL
+            // Compatível com iOS/iPhone
             canvasFinal.toBlob(blob => {
                 if (!blob) {
                     alert('Erro ao gerar a imagem. Tente novamente.');
                     return;
                 }
 
-                const blobUrl = URL.createObjectURL(blob);
-                hiddenLink.href = blobUrl;
-                hiddenLink.download = 'Pedro_Gama_4030_Foto_de_Apoio.png';
-                
                 // Detecta iOS/Safari
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
                 const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
                 
                 if (isIOS || isSafari) {
-                    // No iOS, abre em nova aba para o usuário salvar
-                    window.open(blobUrl, '_blank');
+                    // iOS: Converte blob para data URL (método mais confiável)
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        hiddenLink.href = e.target.result;
+                        hiddenLink.download = 'Pedro_Gama_4030_Foto_de_Apoio.png';
+                        // Abre a imagem em nova aba para o usuário salvar manualmente
+                        setTimeout(() => window.open(e.target.result, '_blank'), 100);
+                    };
+                    reader.readAsDataURL(blob);
                 } else {
-                    // Em outros navegadores, faz download direto
+                    // Outros navegadores: download direto com blob URL
+                    const blobUrl = URL.createObjectURL(blob);
+                    hiddenLink.href = blobUrl;
+                    hiddenLink.download = 'Pedro_Gama_4030_Foto_de_Apoio.png';
                     hiddenLink.click();
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
                 }
-                
-                // Limpa o blob URL após um tempo
-                setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
             }, 'image/png');
         }
 
